@@ -6,10 +6,14 @@ import { MDXContent } from '@/components/MDXContent';
 import { SummarizeButton } from '@/components/SummarizeButton';
 import type { Metadata } from 'next';
 
+export const dynamicParams = true;
+
 interface PostPageProps {
   params: Promise<{
     slug: string;
-  }>;
+  }> | {
+    slug: string;
+  };
 }
 
 export async function generateStaticParams() {
@@ -20,7 +24,14 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata(props: PostPageProps): Promise<Metadata> {
-  const { slug } = await props.params;
+  const resolved = await Promise.resolve(props.params);
+  const slug = resolved?.slug;
+  if (!slug) {
+    return {
+      title: 'Post Not Found | SAGE AI Blog',
+    };
+  }
+
   const post = await getPostBySlugFromDB(slug);
   if (!post) {
     return {
@@ -34,7 +45,12 @@ export async function generateMetadata(props: PostPageProps): Promise<Metadata> 
 }
 
 export default async function PostPage(props: PostPageProps) {
-  const { slug } = await props.params;
+  const resolved = await Promise.resolve(props.params);
+  const slug = resolved?.slug;
+  if (!slug) {
+    notFound();
+  }
+
   const post = await getPostBySlugFromDB(slug);
 
   if (!post) {

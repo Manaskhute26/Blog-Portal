@@ -1,8 +1,6 @@
 import dns from 'dns';
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
 interface MongooseCache {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
@@ -20,26 +18,32 @@ if (!global.mongooseCache) {
 }
 
 export async function connectToDatabase(): Promise<typeof mongoose> {
-  if (!MONGODB_URI) {
-    console.warn("MONGODB_URI is not defined in environment variables. MongoDB features will run in mock mode.");
+  const uri = process.env.MONGODB_URI;
+
+  if (!uri) {
+    console.warn("MONGODB_URI is not defined in environment variables. Running in local fallback mode.");
     return mongoose;
   }
 
-  if (cached.conn) {
+  if (cached.conn && mongoose.connection.readyState === 1) {
     return cached.conn;
   }
 
   if (!cached.promise) {
-    // Force Google Public DNS for SRV lookups — some ISP DNS servers (e.g. Railtel)
-    // refuse SRV queries from Node.js even though they resolve from nslookup.
-    // This must be called before mongoose.connect() in each worker process.
-    dns.setServers(['8.8.8.8', '8.8.4.4']);
+    // Attempt custom DNS resolution in case the host network fails SRV lookups.
+    // Wrapped in try/catch for cloud environments (like Vercel serverless) where dns.setServers may be restricted.
+    try {
+      dns.setServers(['8.8.8.8', '8.8.4.4']);
+    } catch {
+      // Ignore in environments where custom DNS servers cannot be set
+    }
 
-    const opts = {
+    const opts: mongoose.ConnectOptions = {
       bufferCommands: false,
+      serverSelectionTimeoutMS: 5000, // 5s timeout prevents long hanging during builds/cold starts
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongooseInstance) => {
+    cached.promise = mongoose.connect(uri, opts).then((mongooseInstance) => {
       return mongooseInstance;
     });
   }
