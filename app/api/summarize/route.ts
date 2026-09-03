@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request): Promise<Response> {
   try {
     const { content, title } = await req.json();
 

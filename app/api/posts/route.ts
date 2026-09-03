@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Post from '@/lib/models/Post';
 
 // POST /api/posts — Create a new blog post
-export async function POST(req: NextRequest) {
+export async function POST(req: Request): Promise<Response> {
   try {
     await connectToDatabase();
 
