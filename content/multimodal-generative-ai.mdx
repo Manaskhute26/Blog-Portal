@@ -1,0 +1,47 @@
+---
+title: "Multimodal Generative AI: Aligning Vision and Language Latent Spaces"
+date: "2026-08-20"
+category: "Generative AI"
+excerpt: "A technical dive into cross-modal attention mechanisms, contrastive learning objectives, and zero-shot image-text projection layers."
+author:
+  name: "Dr. Rajesh Kumar"
+  role: "Professor of Computer Science, SAGE University"
+thumbnail: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1200&q=80"
+readingTime: "5 min read"
+---
+
+Modern Vision-Language Models (VLMs) construct a joint representation space where visual tokens and text tokens interoperate seamlessly.
+
+## Contrastive Learning Loss
+
+The InfoNCE loss function standard in CLIP-style contrastive pre-training is computed as:
+
+$$
+\mathcal{L}_{i}^{(I \to T)} = -\log \frac{\exp(\langle v_i, t_i \rangle / \tau)}{\sum_{j=1}^{N} \exp(\langle v_i, t_j \rangle / \tau)}
+$$
+
+Where $v_i$ and $t_i$ are normalized image and text embeddings, and $\tau$ denotes the learned temperature parameter.
+
+```python
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class CrossModalProjection(nn.Module):
+    def __init__(self, visual_dim: int, text_dim: int, joint_dim: int = 512):
+        super().__init__()
+        self.v_proj = nn.Linear(visual_dim, joint_dim)
+        self.t_proj = nn.Linear(text_dim, joint_dim)
+        self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
+
+    def forward(self, image_features, text_features):
+        v_emb = F.normalize(self.v_proj(image_features), dim=-1)
+        t_emb = F.normalize(self.t_proj(text_features), dim=-1)
+        
+        # Calculate similarity matrix
+        scale = self.logit_scale.exp()
+        logits = scale * (v_emb @ t_emb.T)
+        return logits
+```
+
+This model architecture forms the core of our multimodal document parsing system.
