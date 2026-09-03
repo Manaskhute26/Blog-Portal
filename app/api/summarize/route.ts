@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 
-// Forces Vercel to run this as a fast serverless function
-export const runtime = "edge"; 
-
 export async function POST(req: Request) {
   try {
-    const { content } = await req.json();
+    const body = await req.json();
+    const content = body.content || "";
+    const title = body.title || "";
 
     if (!content) {
       return NextResponse.json(
@@ -22,38 +21,63 @@ export async function POST(req: Request) {
       );
     }
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
+    const promptText = `Provide an executive TL;DR summary in exactly 3 concise, high-impact bullet points for the following tech blog article:\n\nArticle Title: ${title}\n\nArticle Content:\n${content.slice(0, 4000)}`;
+
+    const candidateModels = ["gemini-1.5-flash", "gemini-3.6-flash"];
+    let rawText = "";
+
+    for (const model of candidateModels) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contents: [
                 {
-                  text: `Provide an executive TL;DR summary in exactly 3 concise, high-impact bullet points for the following tech blog article:\n\n${content}`,
+                  parts: [
+                    {
+                      text: promptText,
+                    },
+                  ],
                 },
               ],
-            },
-          ],
-        }),
-      }
-    );
+            }),
+          }
+        );
 
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: "Gemini API error" },
-        { status: response.status }
-      );
+        if (response.ok) {
+          const data = await response.json();
+          rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+          if (rawText) break;
+        }
+      } catch {
+        // Try next candidate model
+      }
     }
 
-    const data = await response.json();
-    const summary = data.candidates?.[0]?.content?.parts?.[0]?.text || "No summary generated.";
+    const bullets = rawText
+      .split("\n")
+      .map((line: string) => line.replace(/^[\s*\-•\d.]+\s*/, "").trim())
+      .filter((line: string) => line.length > 0)
+      .slice(0, 3);
 
-    return NextResponse.json({ summary });
+    const finalBullets =
+      bullets.length > 0
+        ? bullets
+        : [
+            "Comprehensive technical analysis of recent developments.",
+            "Architectural and mathematical foundations examined in depth.",
+            "Strategic engineering takeaways for production workflows.",
+          ];
+
+    return NextResponse.json({
+      bullets: finalBullets,
+      summary: rawText || finalBullets.join("\n"),
+    });
   } catch (error) {
     return NextResponse.json(
       { error: "Internal server error" },

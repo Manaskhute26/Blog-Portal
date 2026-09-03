@@ -7,9 +7,9 @@ import { SummarizeButton } from '@/components/SummarizeButton';
 import type { Metadata } from 'next';
 
 interface PostPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 export async function generateStaticParams() {
@@ -19,8 +19,9 @@ export async function generateStaticParams() {
   }));
 }
 
-export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
-  const post = await getPostBySlugFromDB(params.slug);
+export async function generateMetadata(props: PostPageProps): Promise<Metadata> {
+  const { slug } = await props.params;
+  const post = await getPostBySlugFromDB(slug);
   if (!post) {
     return {
       title: 'Post Not Found | SAGE AI Blog',
@@ -32,8 +33,9 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
   };
 }
 
-export default async function PostPage({ params }: PostPageProps) {
-  const post = await getPostBySlugFromDB(params.slug);
+export default async function PostPage(props: PostPageProps) {
+  const { slug } = await props.params;
+  const post = await getPostBySlugFromDB(slug);
 
   if (!post) {
     notFound();
