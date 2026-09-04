@@ -88,11 +88,11 @@ export default function AdminNewPost() {
       {/* Navigation */}
       <div className="border-b border-zinc-800 pb-4 flex items-center justify-between">
         <Link
-          href="/"
+          href="/admin/dashboard"
           className="font-mono text-xs text-zinc-400 hover:text-white transition-colors flex items-center space-x-2"
         >
           <span>&larr;</span>
-          <span>// RETURN_TO_FEED</span>
+          <span>// RETURN_TO_DASHBOARD</span>
         </Link>
         <span className="font-mono text-[11px] text-zinc-600 uppercase tracking-widest">
           ADMIN // NEW_POST

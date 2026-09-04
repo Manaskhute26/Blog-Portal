@@ -14,8 +14,11 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "gray-matter": "^4.0.3",
+    "jose": "^6.2.10",
     "katex": "^0.16.11",
     "lucide-react": "^0.400.0",
     "mongoose": "^8.5.1",
